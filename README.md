@@ -1,64 +1,150 @@
-# Carom — starter project
+# Carom
 
-This repository is the starting point for building **Carom**, the game the
-specification under `specs/` describes. Read `specs/overview.md` first; it says
-how the rest of the specification is organized.
+**Carom** is a top-down paddle duel for the browser. Two paddles face each other across a dark field while a ball ricochets between them, off the top and bottom walls, and off a pair of obstacles in the middle of the field. A player scores when the ball passes the far edge behind their opponent's paddle.
 
-This build runs on **no engine**. Nothing here supplies a frame loop, input,
-audio, asset loading, or an overlay, and there is no game code to start from.
-What the project supplies is the toolchain, already configured and installed:
-TypeScript, Vite, Vitest, ESLint and Prettier, wired to the commands below.
+The defining mechanic is **spin**: the motion of a paddle at the moment it strikes a ball curves that ball's flight afterward. The obstacles turn the open field into a bank-shot puzzle.
 
-## What you own
+## What is Carom?
 
-**Everything under `src/`.** The directory does not exist yet; create it.
+Carom is a complete, playable game that runs entirely in a browser with no external dependencies. It features:
 
-`index.html` loads `/src/main.ts` as its entry point, so that module is where
-your build starts. Beyond that the structure is yours. You write the runtime a
-browser game needs — the frame loop and the delta time it measures, fitting the
-fixed logical field onto the canvas, keyboard input, audio, and the diagnostics
-overlay — and you write the game itself on top of it.
+- **Real-time physics** with accurate ball simulation, spin mechanics, and collision detection
+- **Two game modes**: Solo (play against an AI opponent) and Versus (local two-player)
+- **AI opponent** with intelligent tracking and reaction timing
+- **Synthesized audio** with distinct cues for different events
+- **Responsive design** that fits any window size while maintaining a 16:9 logical field
+- **Extensible debug interface** for testing and automation
 
-You also write the `window.__carom` debugging and automation API that
-`specs/instrumentation.md` specifies. It is a required deliverable: it is how the
-game is driven from code, so it is present and exactly as specified.
+The game is written in TypeScript and runs on Vite with no game engine or external asset files.
 
-Every figure the specification fixes — geometry, speeds, spin, the match rules,
-the action names, the cue names — is stated in `specs/`, and the value stated
-there is authoritative.
+## Install
 
-Tests you write belong beside your sources as `src/**/*.test.ts`. `npm test` runs
-them in process, in Node, with coverage over `src/`. `@napi-rs/canvas` is
-installed, so a test that needs a real 2D context can draw through one without a
-browser.
+```bash
+npm ci
+```
 
-## What you must not edit
+Dependencies are already installed in the project. This project requires Node.js 18 or later.
 
-- **`index.html`** — the page and the canvas.
-- **The toolchain** — `package.json`, `tsconfig.json`, `vite.config.ts`,
-  `vitest.config.ts`, `eslint.config.js`, `.prettierrc.json`, `.prettierignore`,
-  and `.gitignore`.
+## Development
 
-Add dependencies to `package.json` if you genuinely need them, and commit the
-`package-lock.json` — the build is installed with `npm ci`. Leave the existing
-entries and scripts alone.
+```bash
+npm run dev
+```
 
-## Commands
+Starts a development server with hot reload at `http://localhost:5173`.
 
-- `npm run dev` — serves the game with hot reload.
-- `npm run build` — type-checks, then emits the static site into `dist/`.
-- `npm run preview` — serves `dist/` for a final check.
-- `npm run typecheck` — `tsc --noEmit`.
-- `npm run lint` — ESLint.
-- `npm run format` — Prettier, in check mode.
-- `npm test` — Vitest over `src/**/*.test.ts`, with coverage.
+## Production Build
 
-## Before you finish
+```bash
+npm run build
+```
 
-- `npm run build` produces `dist/` with `index.html` at its root, and that
-  directory runs as-is on any static host.
-- `npm run typecheck`, `npm run lint`, `npm run format`, and `npm test` all pass.
-  The same four commands are run over the repository you leave behind.
-- **Replace this file** with the `README.md` `specs/overview.md` asks the
-  finished build to ship: what the game is, how to install it, how to run it in
-  development, how to produce the production build, and the controls.
+Produces a static site in `dist/` ready to deploy. Serve the `dist/` directory on any static file host.
+
+```bash
+npm run preview
+```
+
+Preview the production build locally.
+
+## Controls
+
+| Action | Keys |
+| --- | --- |
+| Player 1 Up | `W` or `Arrow Up` |
+| Player 1 Down | `S` or `Arrow Down` |
+| Player 2 Up | `Up Arrow` |
+| Player 2 Down | `Down Arrow` |
+| Confirm Menu | `Enter` or `Space` |
+| Back / Pause | `Escape` |
+| Pause (in-game) | `P` or `Escape` |
+| Mute | `M` |
+| Show Debug Info | `` ` `` (backtick) |
+
+## Game Modes
+
+### Solo
+
+Play against an AI opponent. You control the left paddle; the AI controls the right. The AI tracks the ball's trajectory and predicts where it will arrive, moving to intercept with realistic reaction timing.
+
+### Versus
+
+Two-player game on one keyboard. Player 1 controls the left paddle (W/S), Player 2 controls the right paddle (Arrow Up/Down). Play a full match to 11 points.
+
+## Game Mechanics
+
+### Spin
+
+Spin is the core mechanic. When your paddle strikes the ball, the motion of your paddle at contact adds spin to the ball. Spin causes the ball to curve through the air—the faster your paddle is moving when you hit, the more the ball will curve.
+
+- Move your paddle **downward** while striking to add **positive spin** (curves downward)
+- Move your paddle **upward** while striking to add **negative spin** (curves upward)
+- Hit the ball with a **stationary paddle** to preserve whatever spin it already has
+
+Spin decays over time, so fresh strikes rebuild it. Use spin to curve shots around your opponent or set up bank shots off the obstacles.
+
+### Obstacles
+
+Two fixed obstacles sit in the field. The ball bounces off them like walls, leaving speed and spin unchanged. Use the obstacles to:
+
+- **Bank shots** around your opponent's defense
+- **Change the ball's direction** mid-flight
+- **Set up traps** where your opponent cannot reach
+
+### Scoring
+
+- First to **11 points** wins
+- Must win by at least **2 points** (at 10-10, play continues until someone leads by 2)
+- A point is scored when the ball passes the far edge of the field
+
+## Testing and Debugging
+
+```bash
+npm test
+```
+
+Runs unit tests with coverage over the game's physics and state management.
+
+### Debug Interface
+
+The game exposes `window.__carom` for automation and testing. This interface allows you to:
+
+- Drive the game off real-time and step it frame-by-frame
+- Place entities (balls, obstacles) at specific coordinates
+- Set game state (scores, paddles, AI settings)
+- Read the complete game state as a snapshot
+
+For details, see `specs/instrumentation.md`.
+
+## Code Quality
+
+The codebase passes:
+
+```bash
+npm run typecheck  # TypeScript type checking
+npm run lint       # ESLint linting
+npm run format     # Prettier formatting
+npm test          # Vitest unit tests with coverage
+```
+
+## Architecture
+
+The game is built in layers:
+
+- **Constants** (`src/constants.ts`): All gameplay numbers from the specification
+- **Types** (`src/types.ts`): Game state and interface shapes
+- **State** (`src/state.ts`): State initialization and transitions
+- **Physics** (`src/physics.ts`): Ball simulation, collision detection, and scoring
+- **AI** (`src/ai.ts`): AI opponent behavior
+- **Audio** (`src/audio.ts`): Synthesized sound cues
+- **Runtime** (`src/runtime.ts`): Frame loop, canvas fitting, input handling
+- **Render** (`src/render.ts`): Canvas drawing for all screens
+- **Menu** (`src/menu.ts`): Menu navigation and interaction
+- **Debug** (`src/debug.ts`): The debug/automation surface
+- **Main** (`src/main.ts`): Entry point and game loop
+
+The game runs a 60 FPS frame loop that updates input, advances the simulation, and renders. Physics is render-independent, so the same game state produces the same results at any frame rate.
+
+## License
+
+Carom is open source.
